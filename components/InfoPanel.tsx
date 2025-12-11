@@ -1,6 +1,7 @@
-import React from 'react';
-import { Image, BoxSelect, Maximize, MousePointerClick } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Image, BoxSelect, Maximize, MousePointerClick, Sparkles, Loader2 } from 'lucide-react';
 import { GridSize } from '../types';
+import { generateExplanation } from '../services/geminiService';
 
 interface InfoPanelProps {
   gridSize: GridSize;
@@ -9,24 +10,24 @@ interface InfoPanelProps {
 }
 
 export const InfoPanel: React.FC<InfoPanelProps> = ({ gridSize, totalBits, onLoadPreset }) => {
+  const [explanation, setExplanation] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const generatePattern = (size: number, type: 'checkboard' | 'circle' | 'random'): number[] => {
-    const arr = new Array(size * size).fill(0);
-    if (type === 'checkboard') {
-        return arr.map((_, i) => (Math.floor(i / size) + i) % 2);
+  // Clear explanation when grid size changes to keep it relevant
+  useEffect(() => {
+    setExplanation(null);
+  }, [gridSize]);
+
+  const handleAskAI = async () => {
+    setIsLoading(true);
+    try {
+        const text = await generateExplanation("分辨率与图像清晰度", gridSize);
+        setExplanation(text);
+    } catch (e) {
+        setExplanation("魔法师现在有点忙，请稍后再试！");
     }
-    if (type === 'circle') {
-        const center = (size - 1) / 2;
-        const radius = size / 2 - 1.5; // Slightly smaller to fit nicely
-        return arr.map((_, i) => {
-            const x = i % size;
-            const y = Math.floor(i / size);
-            const dist = Math.sqrt((x - center) ** 2 + (y - center) ** 2);
-            return dist <= radius ? 1 : 0;
-        });
-    }
-    return arr;
-  }
+    setIsLoading(false);
+  };
 
   // Preset Data definitions
   const presets = [
@@ -126,11 +127,40 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ gridSize, totalBits, onLoa
       <div className="mt-4 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
           <div className="flex items-start gap-2">
             <Maximize className="text-yellow-600 shrink-0 mt-1" size={18} />
-            <div>
+            <div className="w-full">
                 <h5 className="font-bold text-yellow-800 text-sm">观察与思考</h5>
                 <p className="text-xs text-yellow-700 mt-1 leading-relaxed">
                     对比 16x16 和 32x32，你会发现格子越多，能表达的信息（比如复杂的汉字）就越丰富！
                 </p>
+
+                 {/* AI Explanation Section */}
+                <div className="mt-3 pt-3 border-t border-yellow-200">
+                    {!explanation && !isLoading && (
+                    <button 
+                        onClick={handleAskAI}
+                        className="w-full flex justify-center items-center gap-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-xs px-2 py-2 rounded-md transition-colors font-bold border border-yellow-300 shadow-sm"
+                    >
+                        <Sparkles size={14} className="text-yellow-600" />
+                        问问魔法师：为什么？
+                    </button>
+                    )}
+
+                    {isLoading && (
+                    <div className="flex justify-center items-center gap-2 text-xs text-yellow-700 py-2">
+                        <Loader2 size={14} className="animate-spin" />
+                        <span>魔法师正在思考...</span>
+                    </div>
+                    )}
+
+                    {explanation && (
+                    <div className="text-xs text-yellow-800 bg-yellow-100/50 p-2 rounded border border-yellow-200 animate-in fade-in">
+                        <p className="font-bold mb-1 flex items-center gap-1 text-yellow-900">
+                        <Sparkles size={12} /> 魔法师说：
+                        </p>
+                        <p className="leading-relaxed whitespace-pre-wrap">{explanation}</p>
+                    </div>
+                    )}
+                </div>
             </div>
           </div>
       </div>
