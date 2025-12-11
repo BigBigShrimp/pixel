@@ -1,0 +1,5 @@
+{
+  "name": "像素魔法师 (Pixel Wizard)",
+  "description": "A web application for 4th-grade students to learn about binary images, the relationship between 0/1 coding and visuals, and the concept of resolution/information density.",
+  "requestFramePermissions": []
+}
